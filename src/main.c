@@ -4,53 +4,66 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#define N_FILHOS 4
-
+#define N_FILHOS 2
+#define SIZE 256
 
 int main(){
-	int n, flag = 0, count_filho=0;
-	char temp;
+	int flag = 0, count_filho=0;
+	unsigned long long n;
+	char line[SIZE], *val;
+	char delims[] = " \n";
 	pid_t filhos[N_FILHOS]; 
 	int pipefd[2];
 	
 	pipe(pipefd);
-	
+	fgets(line, SIZE, stdin);
+	val = strtok(line, delims);
+	printf("val: %s\n", val);
+
 	for(;;){
-		printf("Escaneando...\n");
-    scanf("%d%c", &n, &temp);
-		printf("a");
-    close(pipefd[0]);
-		printf("b");
-    write(pipefd[1], &n, sizeof(n));
-
-    if(temp=='\n')
-      break;
+    if(sscanf(val, "%llu", &n)){
+	    write(pipefd[1], &n, sizeof(n));
+			val = strtok(NULL, delims);
+			printf("val: %s\n", val);
+			if(!(val == NULL))
+				sscanf(val, "%llu", &n);
+			else
+				break;
+		}
   }
+	close(pipefd[1]);
 
-	
+	printf("Loop terminado\n");
+
 	for(char j=0; j<N_FILHOS; j++){
-		filhos[count_filho] = fork();
-		if(filhos[count_filho] = 0){
-			printf("Filho %d gerado\n", count_filho);
-			int n;
+		printf("Gerando filho %d...\n", j);
+		filhos[j] = fork();
+		printf("PID do filho %d = %d\n", j, filhos[j]);
+		if(filhos[j] == 0){
+			printf("Filho %d gerado\n", j);
+			unsigned long long n;
+			int flag;
 			close(pipefd[1]);
-			while(read(pipefd[0], &n, sizeof(n))){
-				printf("Proc. filho %d escreve: %d\n", count_filho, n);
+			while(read(pipefd[0], &n, sizeof(n))>0){
+				printf("Proc. filho %d escreve: %llu\n", j, n);
 				// processa primo
 			}
-		exit(1);
+			close(pipefd[0]);
+			printf("Saindo do processo %d\n", j);
+			exit(0);
+		}
+		else{
+			printf("Pai de numero %d\n", j);
 		}
 	}
 
-	
-	printf("Filhos gerados...\n");	
 
 	printf("Todos os filhos foram gerados. Esperando...\n");
   for (char j=0; j<N_FILHOS; j++) {
     waitpid(filhos[j], NULL, 0);
   }
 
-  printf("Todos os filhos terminaram!");
+  printf("Todos os filhos terminaram!\n");
 
 
 	return(0);
