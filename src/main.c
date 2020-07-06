@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
-#define N_FILHOS 2
+#define N_FILHOS 4
 #define SIZE 256
 
 int main(){
@@ -18,13 +18,13 @@ int main(){
 	pipe(pipefd);
 	fgets(line, SIZE, stdin);
 	val = strtok(line, delims);
-	printf("val: %s\n", val);
+	//printf("val: %s\n", val);
 
 	for(;;){
     if(sscanf(val, "%llu", &n)){
 	    write(pipefd[1], &n, sizeof(n));
 			val = strtok(NULL, delims);
-			printf("val: %s\n", val);
+			//printf("val: %s\n", val);
 			if(!(val == NULL))
 				sscanf(val, "%llu", &n);
 			else
@@ -33,28 +33,34 @@ int main(){
   }
 	close(pipefd[1]);
 
-	printf("Loop terminado\n");
+	//printf("Loop terminado\n");
 
 	for(char j=0; j<N_FILHOS; j++){
-		printf("Gerando filho %d...\n", j);
+		//printf("Gerando filho %d...\n", j);
 		filhos[j] = fork();
-		printf("PID do filho %d = %d\n", j, filhos[j]);
+		//printf("PID do filho %d = %d\n", j, filhos[j]);
 		if(filhos[j] == 0){
-			printf("Filho %d gerado\n", j);
+			//printf("Filho %d gerado\n", j);
 			unsigned long long n;
-			int flag;
+			char flag=1;
 			close(pipefd[1]);
 			while(read(pipefd[0], &n, sizeof(n))>0){
-				printf("Proc. filho %d escreve: %llu\n", j, n);
-				// processa primo
+				//printf("Proc. filho %d escreve: %llu\n", j, n);
+				for(unsigned long long i = 2; i < n/2; i++){
+					if(n%i==0){
+						flag = 0;
+						printf("Filho %d diz que %llu nao eh primo!\n", j, n);
+						break;
+					}
+				}
+				if(flag)
+					printf("Filho %d diz que %llu eh primo!\n", j, n);
 			}
 			close(pipefd[0]);
 			printf("Saindo do processo %d\n", j);
 			exit(0);
 		}
-		else{
-			printf("Pai de numero %d\n", j);
-		}
+			//printf("Pai de numero %d\n", j);
 	}
 
 
