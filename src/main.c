@@ -1,3 +1,8 @@
+/* Nome: João Antônio Gória Silva
+ * RA: 199567
+ */
+
+
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/mman.h>
@@ -24,12 +29,16 @@ int main(){
   int *count;
   count = (int*) mmap(NULL, sizeof(int), protection, visibility, 0, 0);
 
-
+	/* Definir pipe de comunicação entre processos */
 	pipe(pipefd);
+
+	/* Ler entrada do programa */
 	fgets(line, SIZE, stdin);
 	val = strtok(line, delims);
 	//printf("val: %s\n", val);
 
+
+	/* Colocar cada número no pipe, individualmente */
 	for(;;){
     if(sscanf(val, "%llu", &n)){
 	    write(pipefd[1], &n, sizeof(n));
@@ -41,10 +50,12 @@ int main(){
 				break;
 		}
   }
+	/* Fecha terminação de escrita do pipe (nada mais é escrito no pipe) */
 	close(pipefd[1]);
 
 	//printf("Loop terminado\n");
 
+	/* Gera N_FILHOS filhos para processamento dos números */
 	for(char j=0; j<N_FILHOS; j++){
 		//printf("Gerando filho %d...\n", j);
 		filhos[j] = fork();
@@ -56,6 +67,7 @@ int main(){
 			close(pipefd[1]);
 			while(read(pipefd[0], &n, sizeof(n))>0){
 				//printf("Proc. filho %d escreve: %llu\n", j, n);
+				/* Verifica se o número é primo */
 				if(n==1)
 					flag=0;
 				else{
@@ -72,6 +84,7 @@ int main(){
 					(*count)++;
 				}
 			}
+			/* Ao sair do processo filho, fecha saída de leitura do pipe */
 			close(pipefd[0]);
 			//printf("Saindo do processo %d\n", j);
 			exit(0);
@@ -79,7 +92,7 @@ int main(){
 			//printf("Pai de numero %d\n", j);
 	}
 
-
+	/* Espera finalização de todos os processos filhos */
 	//printf("Todos os filhos foram gerados. Esperando...\n");
   for (char j=0; j<N_FILHOS; j++) {
     waitpid(filhos[j], NULL, 0);
